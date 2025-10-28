@@ -1,63 +1,50 @@
 <?php
-// models/TodoModel.php
-require_once __DIR__.'/../config.php';
+require_once (__DIR__ . '/../config.php');
 
-class TodoModel {
-  private $db;
-  public function __construct() { $this->db = pdo(); }
+class TodoModel
+{
+    private $conn;
 
-  public function create($title, $desc) {
-    // validasi unik
-    $q = $this->db->prepare("SELECT 1 FROM todos WHERE lower(title)=lower(:t)");
-    $q->execute([':t'=>$title]);
-    if ($q->fetch()) throw new Exception('Judul sudah dipakai.');
+    public function __construct()
+    {
+        // Inisialisasi koneksi database PostgreSQL
+        $this->conn = pg_connect('host=' . DB_HOST . ' port=' . DB_PORT . ' dbname=' . DB_NAME . ' user=' . DB_USER . ' password=' . DB_PASSWORD);
+        if (!$this->conn) {
+            die('Koneksi database gagal');
+        }
+    }
 
-    // set sort_order = max+1
-    $max = (int)$this->db->query("SELECT COALESCE(MAX(sort_order),0) m FROM todos")->fetch()['m'];
-    $stmt = $this->db->prepare("INSERT INTO todos (title,description,sort_order) VALUES (:t,:d,:o)");
-    $stmt->execute([':t'=>$title, ':d'=>$desc, ':o'=>$max+1]);
-  }
+    public function getAllTodos()
+    {
+        $query = 'SELECT * FROM todo';
+        $result = pg_query($this->conn, $query);
+        $todos = [];
+        if ($result && pg_num_rows($result) > 0) {
+            while ($row = pg_fetch_assoc($result)) {
+                $todos[] = $row;
+            }
+        }
+        return $todos;
+    }
 
-  public function list($filter='all', $q='') {
-    $where=[]; $p=[];
-    if ($filter==='finished')   $where[]="is_finished=true";
-    if ($filter==='unfinished') $where[]="is_finished=false";
-    if ($q!=='') { $where[]="(title ILIKE :q OR description ILIKE :q)"; $p[':q']="%$q%"; }
-    $sql="SELECT * FROM todos".($where?" WHERE ".implode(" AND ",$where):"")." ORDER BY sort_order ASC, created_at DESC";
-    $s=$this->db->prepare($sql); $s->execute($p);
-    return $s->fetchAll();
-  }
+    public function createTodo($activity)
+    {
+        $query = 'INSERT INTO todo (activity) VALUES ($1)';
+        $result = pg_query_params($this->conn, $query, [$activity]);
+        return $result !== false;
+    }
 
-  public function toggle($id, $finished) {
-    $s=$this->db->prepare("UPDATE todos SET is_finished=:f WHERE id=:id");
-    $s->execute([':f'=>$finished? 'true':'false', ':id'=>$id]);
-  }
+    public function updateTodo($id, $activity, $status)
+    {
+        $query = 'UPDATE todo SET activity=$1, status=$2 WHERE id=$3';
+        $result = pg_query_params($this->conn, $query, [$activity, $status, $id]);
+        return $result !== false;
+    }
 
-  public function delete($id) {
-    $s=$this->db->prepare("DELETE FROM todos WHERE id=:id");
-    $s->execute([':id'=>$id]);
-  }
-
-  public function detail($id) {
-    $s=$this->db->prepare("SELECT * FROM todos WHERE id=:id");
-    $s->execute([':id'=>$id]); return $s->fetch();
-  }
-
-  public function update($id, $title, $desc) {
-    // unik, exclude diri sendiri
-    $q=$this->db->prepare("SELECT 1 FROM todos WHERE lower(title)=lower(:t) AND id<>:id");
-    $q->execute([':t'=>$title, ':id'=>$id]);
-    if ($q->fetch()) throw new Exception('Judul sudah dipakai.');
-    $s=$this->db->prepare("UPDATE todos SET title=:t, description=:d WHERE id=:id");
-    $s->execute([':t'=>$title, ':d'=>$desc, ':id'=>$id]);
-  }
-
-  public function reorder(array $ids) {
-    $this->db->beginTransaction();
-    try {
-      $stmt=$this->db->prepare("UPDATE todos SET sort_order=:o WHERE id=:id");
-      $o=1; foreach($ids as $id){ $stmt->execute([':o'=>$o++, ':id'=>(int)$id]); }
-      $this->db->commit();
-    } catch(Throwable $e){ $this->db->rollBack(); throw $e; }
-  }
+    public function deleteTodo($id)
+    {
+        $query = 'DELETE FROM todo WHERE id=$1';
+        $result = pg_query_params($this->conn, $query, [$id]);
+        return $result !== false;
+    }
 }

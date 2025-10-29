@@ -4,10 +4,9 @@ if (isset($_GET['page'])) {
 } else {
     $page = 'index';
 }
-
 include ('../controllers/TodoController.php');
-$todoController = new TodoController();
 
+$todoController = new TodoController();
 switch ($page) {
     case 'index':
         $todoController->index();
@@ -21,7 +20,7 @@ switch ($page) {
     case 'delete':
         $todoController->delete();
         break;
-    case 'reorder': // <-- TAMBAHAN
+    case 'reorder': // <-- penting untuk sorting
         $todoController->reorder();
         break;
     default:

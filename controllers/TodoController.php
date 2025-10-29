@@ -3,21 +3,40 @@ require_once (__DIR__ . '/../models/TodoModel.php');
 
 class TodoController
 {
+    private function currentFilter(): string {
+        $f = $_GET['filter'] ?? 'all';
+        return in_array($f, ['all','done','todo'], true) ? $f : 'all';
+    }
+
+    private function currentQuery(): string {
+        return trim($_GET['q'] ?? '');
+    }
+
     public function index()
     {
-        $todoModel = new TodoModel();
-        $todos = $todoModel->getAllTodos();
+        $model  = new TodoModel();
+        $filter = $this->currentFilter();
+        $q      = $this->currentQuery();
+        $todos  = $model->getTodos($filter, $q);
+
+        // flash error via query string ?err=dup / ?err=fail
+        $err = $_GET['err'] ?? null;
+
         include (__DIR__ . '/../views/TodoView.php');
     }
 
     public function create()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $activity = $_POST['activity'] ?? '';
-            if (trim($activity) !== '') {
-                $todoModel = new TodoModel();
-                $todoModel->createTodo($activity);
-            }
+            $title = trim($_POST['title'] ?? '');
+            $desc  = trim($_POST['description'] ?? '');
+
+            $model = new TodoModel();
+            $ok = ($title !== '') ? $model->createTodo($title, $desc) : false;
+
+            $redir = 'index.php?filter=' . urlencode($this->currentFilter()) . '&q=' . urlencode($this->currentQuery());
+            header('Location: ' . $redir . ($ok ? '' : '&err=dup')); // dup = judul sudah ada / gagal
+            return;
         }
         header('Location: index.php');
     }
@@ -25,13 +44,17 @@ class TodoController
     public function update()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $id = $_POST['id'] ?? null;
-            $activity = $_POST['activity'] ?? '';
-            $status = isset($_POST['status']) ? (int)$_POST['status'] : 0;
-            if ($id !== null) {
-                $todoModel = new TodoModel();
-                $todoModel->updateTodo($id, $activity, $status);
-            }
+            $id    = (int)($_POST['id'] ?? 0);
+            $title = trim($_POST['title'] ?? '');
+            $desc  = trim($_POST['description'] ?? '');
+            $stat  = (int)($_POST['is_finished'] ?? 0);
+
+            $model = new TodoModel();
+            $ok = ($id > 0 && $title !== '') ? $model->updateTodo($id, $title, $desc, $stat) : false;
+
+            $redir = 'index.php?filter=' . urlencode($this->currentFilter()) . '&q=' . urlencode($this->currentQuery());
+            header('Location: ' . $redir . ($ok ? '' : '&err=dup'));
+            return;
         }
         header('Location: index.php');
     }
@@ -40,13 +63,14 @@ class TodoController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
             $id = (int)$_GET['id'];
-            $todoModel = new TodoModel();
-            $todoModel->deleteTodo($id);
+            $model = new TodoModel();
+            $model->deleteTodo($id);
         }
-        header('Location: index.php');
+        $redir = 'index.php?filter=' . urlencode($this->currentFilter()) . '&q=' . urlencode($this->currentQuery());
+        header('Location: ' . $redir);
     }
 
-    /** Endpoint untuk menyimpan urutan (drag & drop) */
+    /** Endpoint AJAX untuk persist urutan drag & drop */
     public function reorder()
     {
         header('Content-Type: application/json');
@@ -61,8 +85,8 @@ class TodoController
             echo json_encode(['ok' => false, 'msg' => 'Order kosong']);
             return;
         }
-        $todoModel = new TodoModel();
-        $ok = $todoModel->saveOrder($order);
+        $model = new TodoModel();
+        $ok = $model->saveOrder(array_map('intval', $order));
         echo json_encode(['ok' => $ok]);
     }
 }

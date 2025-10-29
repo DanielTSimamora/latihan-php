@@ -20,7 +20,7 @@ switch ($page) {
     case 'delete':
         $todoController->delete();
         break;
-    case 'reorder': // <-- penting untuk sorting
+    case 'reorder': // <-- WAJIB buat sorting
         $todoController->reorder();
         break;
     default:

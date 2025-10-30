@@ -46,7 +46,7 @@ class TodoController
         header('Location: index.php');
     }
 
-    // ==== Endpoint untuk sorting (dipanggil via fetch POST) ====
+    // Endpoint untuk sorting (dipanggil via fetch POST)
     public function reorder()
     {
         header('Content-Type: application/json');
@@ -64,5 +64,25 @@ class TodoController
         $todoModel = new TodoModel();
         $ok = $todoModel->saveOrder(array_map('intval', $order));
         echo json_encode(['ok' => $ok]);
+    }
+
+    // Endpoint JSON untuk modal Detail
+    public function detail()
+    {
+        header('Content-Type: application/json');
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if ($id <= 0) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'msg' => 'ID invalid']);
+            return;
+        }
+        $todoModel = new TodoModel();
+        $row = $todoModel->getTodoById($id);
+        if (!$row) {
+            http_response_code(404);
+            echo json_encode(['ok' => false, 'msg' => 'Data tidak ditemukan']);
+            return;
+        }
+        echo json_encode(['ok' => true, 'data' => $row]);
     }
 }

@@ -4,7 +4,7 @@ if (isset($_GET['page'])) {
 } else {
     $page = 'index';
 }
-include ('../controllers/TodoController.php');
+include (__DIR__ . '/../controllers/TodoController.php');
 
 $todoController = new TodoController();
 switch ($page) {
@@ -20,8 +20,11 @@ switch ($page) {
     case 'delete':
         $todoController->delete();
         break;
-    case 'reorder': // <-- WAJIB buat sorting
+    case 'reorder': // untuk sorting
         $todoController->reorder();
+        break;
+    case 'detail':  // JSON detail untuk modal
+        $todoController->detail();
         break;
     default:
         $todoController->index();

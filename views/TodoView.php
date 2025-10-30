@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <!-- Toolbar (dummy visual, filter/search client-side) -->
+    <!-- Toolbar (filter/search client-side) -->
     <div class="d-flex flex-wrap gap-2 align-items-center toolbar mb-3">
         <div class="btn-group" role="group" aria-label="Filter status">
             <button class="btn btn-outline-secondary active" data-filter="all">Semua</button>
@@ -64,34 +64,38 @@
                         <th>Aktivitas</th>
                         <th style="width:140px">Status</th>
                         <th style="width:220px">Tanggal Dibuat</th>
-                        <th style="width:160px" class="text-end">Tindakan</th>
+                        <th style="width:220px" class="text-end">Tindakan</th>
                     </tr>
                 </thead>
                 <tbody id="todoBody">
                 <?php if (!empty($todos)): ?>
                     <?php foreach ($todos as $i => $todo): ?>
-                    <tr data-id="<?= $todo['id'] ?>" data-status="<?= $todo['status'] ? 'done' : 'todo' ?>">
+                    <tr data-id="<?= (int)$todo['id'] ?>" data-status="<?= !empty($todo['status']) ? 'done' : 'todo' ?>">
                         <td class="text-muted"><span class="drag-handle" style="cursor:grab">⋮⋮</span></td>
                         <td class="text-muted"><?= $i + 1 ?></td>
-                        <td><div class="fw-semibold"><?= htmlspecialchars($todo['activity']) ?></div></td>
                         <td>
-                            <?php if ($todo['status']): ?>
+                          <div class="fw-semibold"><?= htmlspecialchars($todo['activity']) ?></div>
+                        </td>
+                        <td>
+                            <?php if (!empty($todo['status'])): ?>
                                 <span class="badge badge-soft-success status-pill">Selesai</span>
                             <?php else: ?>
                                 <span class="badge badge-soft-danger status-pill">Belum Selesai</span>
                             <?php endif; ?>
                         </td>
                         <td class="text-muted">
-                            <?= isset($todo['created_at']) ? date('d F Y - H:i', strtotime($todo['created_at'])) : '-' ?>
+                            <?= !empty($todo['created_at']) ? date('d F Y - H:i', strtotime($todo['created_at'])) : '-' ?>
                         </td>
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
+                                <button class="btn btn-info"
+                                    onclick="showModalDetailTodo(<?= (int)$todo['id'] ?>)">Detail</button>
                                 <button class="btn btn-warning"
-                                    onclick="showModalEditTodo(<?= $todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>', <?= $todo['status'] ?>)">
+                                    onclick="showModalEditTodo(<?= (int)$todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>', <?= (int)$todo['status'] ?>)">
                                     Ubah
                                 </button>
                                 <button class="btn btn-danger"
-                                    onclick="showModalDeleteTodo(<?= $todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>')">
+                                    onclick="showModalDeleteTodo(<?= (int)$todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>')">
                                     Hapus
                                 </button>
                             </div>
@@ -194,6 +198,42 @@
   </div>
 </div>
 
+<!-- MODAL DETAIL TODO -->
+<div class="modal fade" id="detailTodo" tabindex="-1" aria-labelledby="detailTodoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="detailTodoLabel">Detail Todo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-0">
+        <dl class="row mb-0">
+          <dt class="col-4">ID</dt>
+          <dd class="col-8" id="d_id">-</dd>
+
+          <dt class="col-4">Aktivitas</dt>
+          <dd class="col-8" id="d_activity">-</dd>
+
+          <dt class="col-4">Status</dt>
+          <dd class="col-8" id="d_status">-</dd>
+
+          <dt class="col-4">Posisi</dt>
+          <dd class="col-8" id="d_position">-</dd>
+
+          <dt class="col-4">Dibuat</dt>
+          <dd class="col-8" id="d_created_at">-</dd>
+
+          <dt class="col-4">Diupdate</dt>
+          <dd class="col-8" id="d_updated_at">-</dd>
+        </dl>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/assets/vendor/bootstrap-5.3.8-dist/js/bootstrap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
@@ -209,7 +249,48 @@ function showModalDeleteTodo(todoId, activity) {
   new bootstrap.Modal(document.getElementById("deleteTodo")).show();
 }
 
-/* --------- Filter/Search/Progress (client-side) ---------- */
+/* ---- Format tanggal ---- */
+function fmtDate(s){
+  if(!s) return '-';
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  return d.toLocaleString('id-ID', {
+    day: '2-digit', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).replace(',', ' -');
+}
+
+/* ---- Modal Detail ---- */
+function showModalDetailTodo(id){
+  // reset placeholder
+  document.getElementById('d_id').textContent = '...';
+  document.getElementById('d_activity').textContent = '...';
+  document.getElementById('d_status').textContent = '...';
+  document.getElementById('d_position').textContent = '...';
+  document.getElementById('d_created_at').textContent = '...';
+  document.getElementById('d_updated_at').textContent = '...';
+
+  fetch(`?page=detail&id=${id}`, { headers: { 'Accept': 'application/json' } })
+    .then(r => r.json())
+    .then(res => {
+      if(!res.ok){ throw new Error(res.msg || 'Gagal ambil detail'); }
+      const t = res.data;
+      document.getElementById('d_id').textContent = t.id ?? '-';
+      document.getElementById('d_activity').textContent = t.activity ?? '-';
+      document.getElementById('d_status').textContent = (String(t.status) === '1') ? 'Selesai' : 'Belum Selesai';
+      document.getElementById('d_position').textContent = t.position ?? '-';
+      document.getElementById('d_created_at').textContent = fmtDate(t.created_at);
+      document.getElementById('d_updated_at').textContent = t.updated_at ? fmtDate(t.updated_at) : '-';
+    })
+    .catch(err => {
+      document.getElementById('d_activity').textContent = 'Error: ' + err.message;
+    })
+    .finally(() => {
+      new bootstrap.Modal(document.getElementById('detailTodo')).show();
+    });
+}
+
+/* ---- Filter/Search/Progress (client-side) ---- */
 const bodyRows = Array.from(document.querySelectorAll('#todoBody tr[data-status]'));
 const metaCount = document.getElementById('metaCount');
 const bar = document.getElementById('progressBar');
@@ -252,12 +333,12 @@ function search(){
   refreshStats();
 }
 
-/* --------- Drag & Drop sorting (persist ke DB) ---------- */
+/* ---- Drag & Drop sorting (persist ke DB) ---- */
 const tbody = document.getElementById('todoBody');
 
 function renumber(){
   Array.from(tbody.querySelectorAll('tr[data-id]')).forEach((tr, i) => {
-    const noCell = tr.querySelector('td:nth-child(2)'); // kolom nomor (#) ada di posisi ke-2 (kolom ke-1 adalah handle)
+    const noCell = tr.querySelector('td:nth-child(2)'); // kolom nomor (#) di posisi ke-2
     if (noCell) noCell.textContent = i + 1;
   });
   refreshStats();

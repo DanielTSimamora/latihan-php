@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8">
   <title>PHP - Aplikasi Todolist</title>
+  <link rel="icon" type="image/png" href="/assets/images/logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="/assets/vendor/bootstrap-5.3.8-dist/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- (Opsional) Bootstrap Icons untuk ikon-ikon kecil -->
+  <!-- (Opsional) Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
     :root{
@@ -14,8 +15,8 @@
       --muted:#9aa3b2;
       --card:#121a33;
       --card-2:#0e1630;
-      --primary:#6ea8fe; /* bootstrap primary 500-ish */
-      --accent:#a78bfa;  /* purple-ish */
+      --primary:#6ea8fe;
+      --accent:#a78bfa;
       --success-soft: rgba(25,135,84,.15);
       --danger-soft: rgba(220,53,69,.15);
       --ring: rgba(110,168,254,.45);
@@ -29,13 +30,6 @@
     }
     html,body{background: radial-gradient(1200px 800px at 80% -100px, #3b82f6 0%, transparent 60%), radial-gradient(900px 600px at -10% -80px, #a78bfa 0%, transparent 55%), var(--bg); color: var(--fg);}
     .shell{max-width: 1100px; margin: 0 auto; padding: 56px 16px;}
-    .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 18px;
-      box-shadow: 0 10px 40px rgba(2,6,23,.35);
-    }
     .header{
       padding: 22px 24px;
       background: var(--card);
@@ -43,73 +37,49 @@
       box-shadow: 0 10px 32px rgba(2,6,23,.25);
       border: 1px solid rgba(255,255,255,.08);
     }
-    .toolbar{
-      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-      margin-top: 14px;
-    }
-    .pill{
-      border: 1px solid rgba(255,255,255,.15);
-      color: var(--fg);
-    }
+    .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:14px}
+    .pill{border:1px solid rgba(255,255,255,.15); color:var(--fg)}
     .pill.active{
       background: linear-gradient(180deg, var(--primary), #3b82f6);
-      border-color: transparent;
-      color: white;
-      box-shadow: 0 6px 18px rgba(59,130,246,.35);
+      border-color:transparent; color:#fff; box-shadow:0 6px 18px rgba(59,130,246,.35)
     }
-    .progress-wrap{margin-top: 12px}
-    .progress{height: 10px; background: rgba(255,255,255,.12)}
+    .progress-wrap{margin-top:12px}
+    .progress{height:10px; background: rgba(255,255,255,.12)}
     .progress-bar{background: linear-gradient(90deg, var(--primary), var(--accent))}
     .meta{color: var(--muted)}
 
-    /* List */
     .list-wrap{margin-top:16px}
+    .list-gap{display:grid; gap:12px}
     .todo-card{
       background: var(--card-2);
       border: 1px solid rgba(255,255,255,.10);
       border-radius: 16px;
-      padding: 14px 14px;
-      display: flex; gap: 12px; align-items: start;
+      padding: 14px;
+      display:flex; gap:12px; align-items:flex-start;
       transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease;
     }
-    .todo-card:hover{
-      transform: translateY(-2px);
-      border-color: rgba(110,168,254,.35);
-      box-shadow: 0 14px 40px rgba(2,6,23,.35);
-    }
-    .drag-handle{
-      cursor: grab; user-select: none;
-      color: var(--muted);
-      display:flex; align-items:center; padding: 6px 4px;
-    }
-    .todo-main{flex:1 1 auto; min-width: 0}
-    .todo-title{font-weight: 600; letter-spacing:.2px}
-    .todo-sub{font-size: .9rem; color: var(--muted)}
-    .badge-soft-success{background: var(--success-soft); color:#198754; font-weight:600}
-    .badge-soft-danger{background: var(--danger-soft); color:#dc3545; font-weight:600}
+    .todo-card:hover{transform: translateY(-2px); border-color: rgba(110,168,254,.35); box-shadow:0 14px 40px rgba(2,6,23,.35)}
+    .drag-handle{cursor:grab; user-select:none; color:var(--muted); display:flex; align-items:center; padding:6px 4px}
+    .todo-main{flex:1 1 auto; min-width:0}
+    .todo-title{font-weight:600; letter-spacing:.2px}
+    .todo-sub{font-size:.9rem; color:var(--muted)}
+    .badge-soft-success{background:var(--success-soft); color:#198754; font-weight:600}
+    .badge-soft-danger{background:var(--danger-soft); color:#dc3545; font-weight:600}
     .actions{display:flex; gap:8px}
-    .btn-ghost{
-      background: transparent; border: 1px solid rgba(255,255,255,.12); color: var(--fg);
-    }
-    .btn-ghost:hover{
-      border-color: var(--ring); box-shadow: 0 0 0 4px var(--ring);
-    }
-    .empty{
-      text-align:center; padding: 48px 16px; color: var(--muted)
-    }
+    .btn-ghost{background:transparent; border:1px solid rgba(255,255,255,.12); color:var(--fg)}
+    .btn-ghost:hover{border-color:var(--ring); box-shadow:0 0 0 4px var(--ring)}
+    .empty{text-align:center; padding:48px 16px; color:var(--muted)}
     .empty .emo{font-size:44px; display:block; margin-bottom:8px}
-    .list-gap{display: grid; gap: 12px}
 
-    /* Offcanvas tweak (detail) */
     .offcanvas{background: var(--card); color: var(--fg)}
     .dl-compact dt{color: var(--muted); width: 110px}
-    .dl-compact dd{margin-left: 0}
+    .dl-compact dd{margin-left:0}
   </style>
 </head>
 <body>
   <div class="shell">
 
-    <!-- Header / Summary -->
+    <!-- Header -->
     <div class="header">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
         <div>
@@ -175,22 +145,24 @@
                 </div>
               </div>
               <div class="actions">
-                <button class="btn btn-ghost btn-sm" onclick="openDetail(<?= (int)$todo['id'] ?>)">
+                <button class="btn btn-ghost btn-sm" onclick="openDetail(<?= (int)$todo['id'] ?>)" title="Detail">
                   <i class="bi bi-info-circle"></i>
                 </button>
                 <button class="btn btn-ghost btn-sm"
-                  onclick="showModalEditTodo(<?= (int)$todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>', <?= (int)$todo['status'] ?>)">
+                  onclick="showModalEditTodo(<?= (int)$todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>', <?= (int)$todo['status'] ?>)"
+                  title="Ubah">
                   <i class="bi bi-pencil-square"></i>
                 </button>
                 <button class="btn btn-ghost btn-sm"
-                  onclick="showModalDeleteTodo(<?= (int)$todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>')">
+                  onclick="showModalDeleteTodo(<?= (int)$todo['id'] ?>, '<?= htmlspecialchars(addslashes($todo['activity'])) ?>')"
+                  title="Hapus">
                   <i class="bi bi-trash3"></i>
                 </button>
               </div>
             </div>
           <?php endforeach; ?>
         <?php else: ?>
-          <div class="glass empty">
+          <div class="empty">
             <span class="emo">📝</span>
             <div class="fw-semibold mb-1">Belum ada data tersedia</div>
             <div class="small mb-3">Mulai dengan menambahkan aktivitas pertamamu.</div>
@@ -234,7 +206,7 @@
       <div class="modal-content">
         <div class="modal-header border-0">
           <h5 class="modal-title" id="editTodoLabel">Ubah Data Todo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
         </div>
         <form action="?page=update" method="POST">
           <input name="id" type="hidden" id="inputEditTodoId">
@@ -327,7 +299,6 @@
 
     /* ==== Detail (Offcanvas) ==== */
     function openDetail(id){
-      // reset
       ["d_id","d_activity","d_status","d_position","d_created_at","d_updated_at"]
         .forEach(k => document.getElementById(k).textContent = "...");
       fetch(`?page=detail&id=${id}`, { headers: { 'Accept': 'application/json' } })
@@ -354,13 +325,16 @@
     const bar = document.getElementById('progressBar');
     const label = document.getElementById('progressLabel');
 
+    // PROGRESS GLOBAL: selalu selesai/total dari SEMUA item, bukan yang difilter
     function refreshStats(){
-      const all = cards();
-      const total = all.length;
-      const shownList = all.filter(el => el.style.display !== 'none');
-      const doneShown = shownList.filter(el => el.dataset.status === 'done').length;
-      const pct = total ? Math.round(doneShown / total * 100) : 0;
-      if (bar) bar.style.width = pct + '%';
+      const all = cards();                              // semua kartu (global)
+      const totalAll = all.length;
+      const doneAll  = all.filter(el => el.dataset.status === 'done').length;
+      const pct = totalAll ? Math.round(doneAll / totalAll * 100) : 0;
+
+      const shownList = all.filter(el => el.style.display !== 'none'); // hanya untuk "X item ditampilkan"
+
+      if (bar)   bar.style.width = pct + '%';
       if (label) label.textContent = pct + '%';
       if (metaCount) metaCount.textContent = (shownList.length || 0) + ' item ditampilkan';
     }
@@ -384,9 +358,7 @@
       const q = (sb?.value || '').toLowerCase();
       const activeFilter = document.querySelector('[data-filter].active')?.dataset.filter || 'all';
       cards().forEach(el=>{
-        // pertama cek filter
         const passFilter = (activeFilter === 'all') || (el.dataset.status === activeFilter);
-        // lalu cek search
         const text = el.querySelector('.todo-title')?.textContent.toLowerCase() || '';
         const passSearch = text.includes(q);
         el.style.display = (passFilter && passSearch) ? '' : 'none';
@@ -407,9 +379,7 @@
           ids.forEach(id => form.append('order[]', id));
           fetch('?page=reorder', { method: 'POST', body: form })
             .then(r => r.json())
-            .then(res => {
-              if (!res.ok) console.error('Gagal simpan urutan');
-            })
+            .then(res => { if (!res.ok) console.error('Gagal simpan urutan'); })
             .catch(console.error);
         }
       });
